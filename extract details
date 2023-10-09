@@ -1,0 +1,35 @@
+import re
+import requests
+from bs4 import BeautifulSoup
+
+# Define the URL of the website you want to scrape
+url = 'https://sahyadri.edu.in'  # Replace with the URL of the website you want to scrape
+
+# Send an HTTP GET request to the URL
+response = requests.get(url)
+
+# Check if the request was successful (status code 200)
+if response.status_code == 200:
+    # Parse the HTML content of the page
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Extract email addresses using regular expressions
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+    emails = re.findall(email_pattern, response.text)
+    
+    # Extract phone numbers using regular expressions (basic pattern)
+    phone_pattern = r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b'
+    phones = re.findall(phone_pattern, response.text)
+    
+    # Extract links (URLs) using BeautifulSoup
+    links = [a['href'] for a in soup.find_all('a', href=True)]
+    
+    # Print the extracted data
+    print("Email Addresses:")
+    print(emails)
+    print("\nPhone Numbers:")
+    print(phones)
+    print("\nLinks:")
+    print(links)
+else:
+    print('Failed to retrieve the web page. Status code:', response.status_code)

@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+
+# Specify the URL of the webpage you want to scrape
+url = 'https://sahyadri.edu.in/'
+
+# Send an HTTP GET request to the URL
+response = requests.get(url)
+
+# Check if the request was successful (status code 200)
+if response.status_code == 200:
+    # Parse the HTML content of the page using BeautifulSoup
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find the HTML elements that contain the article titles
+    # You can use CSS selectors or other methods to locate elements
+    # Here, we're assuming that article titles are inside <h2> tags
+    article_titles = soup.find_all('p')
+
+    # Specify the full path to the file on the D: drive
+    file_path = 'D:/article_titles.txt'
+
+    # Open the file for writing (creates or overwrites the file)
+    with open(file_path, 'w', encoding='utf-8') as file:
+        # Loop through the titles and write them to the file
+        for title in article_titles:
+            file.write(title.text + '\n')
+
+    print(f'Article titles saved to "{file_path}"')
+
+    # Define the regular expression pattern for matching email addresses
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+
+    # Open the file for reading (replace 'your_file.txt' with your file's path)
+    with open(file_path, 'r') as file:
+        text = file.read()
+
+        # Find all email addresses in the text using the regular expression
+        email_addresses = re.findall(email_pattern, text)
+
+        # Print the extracted email addresses
+        for email in email_addresses:
+            print(email)
+else:
+    print('Failed to retrieve the webpage. Status code:', response.status_code)
