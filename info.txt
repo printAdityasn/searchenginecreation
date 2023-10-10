@@ -1,0 +1,12 @@
+Email,Phone
+administrator@sahyadri.edu.in,
+sahyadri@sahyadri.edu.in,
+sahyadri@sahyadri.edu.in,
+sahyadri@sahyadri.edu.in,
+sahyadri@sahyadri.edu.in,
+principal@sahyadri.edu.in,
+principal@sahyadri.edu.in,
+,824 2277222
+,9449761234
+,824 2277222
+,824 2277222

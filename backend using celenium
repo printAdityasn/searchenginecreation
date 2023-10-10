@@ -1,0 +1,39 @@
+import csv
+import re
+from selenium import webdriver
+
+# Initialize the Selenium WebDriver (you need to install the appropriate driver, e.g., ChromeDriver)
+driver = webdriver.Chrome( )
+
+# Navigate to the website
+url = 'https://sahyadri.edu.in/'
+driver.get(url)
+
+# Get the entire page source
+page_source = driver.page_source
+
+# Use regular expressions to find email addresses and phone numbers
+email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+phone_pattern = r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b'
+
+emails = re.findall(email_pattern, page_source)
+phones = re.findall(phone_pattern, page_source)
+
+# Close the WebDriver
+driver.quit()
+
+# Store the contact details in a CSV file
+csv_filename = 'info.txt'
+
+with open(csv_filename, mode='w', newline='') as file:
+    fieldnames = ['Email', 'Phone']
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for email in emails:
+        writer.writerow({'Email': email})
+
+    for phone in phones:
+        writer.writerow({'Phone': phone})
+
+print(f'Email addresses and phone numbers scraped and stored in {csv_filename}')
