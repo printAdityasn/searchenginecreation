@@ -1,0 +1,110 @@
+import csv
+import os
+import re
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+
+# Initialize the Selenium WebDriver (you need to install the appropriate driver, e.g., ChromeDriver)
+driver = webdriver.Chrome()
+
+# Create a set to store visited links
+visited_links = set()
+
+# Create lists to store different types of links
+regular_links = []
+social_media_links = []
+
+# Define regular expressions to match email addresses and phone numbers
+email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+phone_pattern = r'\b(?:\+91|0)?[ -.]?[789]\d{9}\b'
+
+# Create lists to store available email addresses and phone numbers
+available_emails = []
+available_phones = []
+
+# Function to scrape email addresses and phone numbers from a given URL
+def scrape_contacts_from_url(url):
+    driver.get(url)
+    page_source = driver.page_source
+    emails = re.findall(email_pattern, page_source)
+    phones = re.findall(phone_pattern, page_source)
+    return emails, phones
+
+# Function to visit linked pages and scrape contacts
+def visit_and_scrape_linked_pages(linked_pages):
+    for sub_url in linked_pages:
+        if sub_url not in visited_links:
+            # Mark the link as visited
+            visited_links.add(sub_url)
+
+            # Check if the link is a social media link based on your criteria
+            if is_social_media_link(sub_url):
+                social_media_links.append(sub_url)
+                continue
+
+            emails, phones = scrape_contacts_from_url(sub_url)
+
+            # If emails or phones are found, store them
+            if emails:
+                available_emails.extend(emails)
+            if phones:
+                available_phones.extend(phones)
+
+            # Return to the main webpage
+            driver.back()
+
+# Define a function to check if a link is a social media link
+def is_social_media_link(link):
+    # Add your logic to identify social media links here
+    # For example, you can check if the link contains "facebook.com", "twitter.com", etc.
+    social_media_keywords = ["facebook.com", "twitter.com", "youtube"]
+    return any(keyword in link for keyword in social_media_keywords)
+
+# Navigate to the main website
+main_url = 'https://www.paduadegreecollege.org/'
+driver.get(main_url)
+
+# Get all links on the main page using BeautifulSoup and Requests
+response = requests.get(main_url)
+if response.status_code == 200:
+    soup = BeautifulSoup(response.text, 'html.parser')
+    anchor_tags = soup.find_all('a')
+
+    # Create a folder to store linked page URLs
+    folder_name = 'linked_pages'
+    os.makedirs(folder_name, exist_ok=True)
+
+    # Iterate through the anchor tags and extract linked page URLs
+    for anchor_tag in anchor_tags:
+        sub_url = anchor_tag.get('href')
+        if sub_url and sub_url.startswith('http'):  # Ensure it's a valid URL
+            # Store the linked page URL in the folder
+            with open(os.path.join(folder_name, f'linked_page_{len(os.listdir(folder_name)) + 1}.txt'), 'w') as f:
+                f.write(sub_url)
+
+            # Visit the linked page and scrape contacts
+            visit_and_scrape_linked_pages([sub_url])
+
+    # Close the WebDriver
+    driver.quit()
+
+    # Store the available contact details in a CSV file
+    csv_filename = 'contacts.csv'
+
+    with open(csv_filename, mode='w', newline='') as file:
+        fieldnames = ['Email', 'Phone']
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for email in available_emails:
+            writer.writerow({'Email': email})
+
+        for phone in available_phones:
+            writer.writerow({'Phone': phone})
+
+    # Store the social media links in a separate file
+    social_media_filename = 'social_media_links.txt'
+    with open(social_media_filename, 'w') as social_media_file:
+        for link in social_media_links:
+            social_media_file.write(link + '\n')
