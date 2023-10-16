@@ -1,0 +1,105 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+from urllib.parse import urljoin
+
+visited_links = set()
+visited_emails = set()
+visited_phones = set()
+
+
+# Function to extract links
+def extract_links(soup, base_url):
+    if soup is not None:
+        links = []
+        for anchor in soup.find_all('a', href=True):
+            link = anchor['href']
+            # Handle relative URLs
+            absolute_url = urljoin(base_url, link)
+            links.append(absolute_url)
+        return links
+    else:
+        return []
+
+# Function to extract phone numbers
+def extract_phone_numbers(text):
+    phone_number_pattern = r'\b(?:\+\d{1,2}\s*)?(?:(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b(?!\d))'
+
+    phone_numbers = set(re.findall(phone_number_pattern, text))
+    return phone_numbers
+
+# Function to extract email IDs
+def extract_email_ids(text):
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+    email_ids = set(re.findall(email_pattern, text))
+    return email_ids
+
+# Function to extract social media links 
+def extract_social_media_links(website_url):
+    response = requests.get(website_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    social_media_links = []
+    social_media_patterns = [
+        r'facebook\.com',
+        r'twitter\.com',
+        r'linkedin\.com',
+        r'instagram\.com',
+        r'youtube\.com',
+        r'pinterest\.com',
+        # Add more patterns for other social media platforms
+    ]
+
+    for a_tag in soup.find_all('a', href=True):
+        link = a_tag['href']
+        for pattern in social_media_patterns:
+            if re.search(pattern, link):
+                social_media_links.append(link)
+
+    return social_media_links
+
+# Function to crawl the website recursively using depth-first search
+def crawl_website(website_url):
+    if website_url not in visited_links:
+        visited_links.add(website_url)
+
+        response = requests.get(website_url)
+        html_content = response.text
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Extract links, phone numbers, email IDs, and social media links
+        links = extract_links(soup, website_url)
+        phone_numbers = extract_phone_numbers(html_content)
+        email_ids = extract_email_ids(html_content)
+        social_media_links = extract_social_media_links(website_url)
+
+        # Store the extracted data in files without overwriting
+        with open("Email1.txt", "a") as email_file:
+            for email in email_ids:
+                if email not in visited_emails:
+                    visited_emails.add(email)
+                    email_file.write(email + "\n")
+
+        with open("Ph_no1.txt", "a") as phone_file:
+            for phone in phone_numbers:
+                if phone not in visited_phones:
+                    visited_phones.add(phone)
+                    phone_file.write(phone + "\n")
+
+        with open("All_links1.txt", "a") as link_file:
+            for link in links:
+                link_file.write(link + "\n")
+
+        with open("SocialMedia1.txt", "a") as social_file:
+            for Slink in social_media_links:
+                social_file.write(Slink + "\n")
+
+        print("Links")
+        # Recursively crawl linked pages
+        for link in links:
+            print(link)
+            crawl_website(link)
+
+# Replace 'your_website_url' with the URL you want to start crawling
+website_url = "https://sahyadri.edu.in"
+crawl_website(website_url)
